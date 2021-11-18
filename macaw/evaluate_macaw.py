@@ -23,8 +23,8 @@ def evaluate(model_name):
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
     def process_data_to_model_inputs(batch):
-        inputs = tokenizer(batch["text"], padding="max_length", truncation=True, max_length=200)
-        outputs = tokenizer(batch["page"], padding="max_length", truncation=True, max_length=50)
+        inputs = tokenizer(batch["text"], padding="max_length", truncation=True, max_length=1000)
+        outputs = tokenizer(batch["page"], padding="max_length", truncation=True, max_length=30)
 
         batch["input_ids"] = inputs.input_ids
         batch["attention_mask"] = inputs.attention_mask
@@ -42,11 +42,11 @@ def evaluate(model_name):
                          "category", "tokenizations", "qanta_id"]
 
     # tokenized_datasets = raw_datasets
-    small_train_dataset = raw_datasets["buzztrain"].map(
+    small_train_dataset = raw_datasets["guesstrain"].map(
         process_data_to_model_inputs,
         remove_columns=columns_to_remove,
         batched=True).shuffle(seed=42).select(range(10))
-    small_eval_dataset = raw_datasets["buzzdev"].map(
+    small_eval_dataset = raw_datasets["guessdev"].map(
         process_data_to_model_inputs,
         remove_columns=columns_to_remove,
         batched=True).shuffle(seed=42).select(range(10))
@@ -75,7 +75,7 @@ def evaluate(model_name):
             print(f"accuracy={score}")
             return score
 
-        trainer = Trainer(
+        trainer = Seq2SeqTrainer(
             model=model,
             args=training_args,
             train_dataset=small_train_dataset,
