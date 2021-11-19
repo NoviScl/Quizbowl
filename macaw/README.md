@@ -6,3 +6,6 @@
 ```
 python evaluate_macaw.py --model_name [macaw model to use] --do_train --do_eval
 ```
+
+### Dependencies
+See `requirements.txt'.
