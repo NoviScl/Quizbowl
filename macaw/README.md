@@ -4,5 +4,5 @@
 
 ### Example
 ```
-evaluate_macaw --model_name [macaw model to use] --do_train --do_eval
+python evaluate_macaw.py --model_name [macaw model to use] --do_train --do_eval
 ```
