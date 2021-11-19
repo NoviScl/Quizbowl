@@ -4,6 +4,9 @@
 
 This is the codebase for our CMSC470 project on evaluaing closed-book generative QA models for the task of question answering. 
 
+Team members: Arjun Akkiraju, Gurmehar Cheema, Elliot Huang, Naman Molri, and Chenglei Si.
+
+
 #### Progress (Last updated: 19 Nov, 2021)
 
 Things that we have done:
