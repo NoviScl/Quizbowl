@@ -5,6 +5,7 @@ import json
 from rapidfuzz import process, fuzz
 import unicodedata
 import nltk
+nltk.download('wordnet')
 from nltk.corpus import wordnet
 
 def get_exact_match(answers1, answers2):
@@ -25,8 +26,6 @@ def get_exact_match(answers1, answers2):
     return choice[1] >63.3 if type(choice)==tuple else choice >63.3
     
     
-
-
 def normalize_answer(s):
 
     def remove_articles(text):
