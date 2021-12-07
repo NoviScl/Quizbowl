@@ -4,6 +4,8 @@ import numpy as np
 import json
 from rapidfuzz import process, fuzz
 import unicodedata
+import nltk
+from nltk.corpus import wordnet
 
 def get_exact_match(answers1, answers2):
     if type(answers1)==list:
@@ -74,7 +76,12 @@ def get_f1(answers, predictions, is_equal=get_exact_match, return_p_and_r=False)
         return 0.
     return 2*a*b/(a+b)
 
-
+def get_synonyms(word):
+    synonyms = []
+    for syn in wordnet.synsets(word):
+        for l in syn.lemmas():
+            synonyms.append(l.name())
+    return set(synonyms)
 
 if __name__ == "__main__":
     with open("test_100.json", 'r') as f:
@@ -102,10 +109,18 @@ if __name__ == "__main__":
             true_check += 1
         EM.append(str(counter)+'/'+str(em))
         counter +=1
-        # if em == 0:
+        if em == 0:
+            syn = get_synonyms(normalize_answer(predictions[i]))
+            emm = False
+            for word in syn:
+                emm = emm or get_exact_match(answers[i], word)
+            if(emm):
+                true_check += 1
+                
         #     print ("question: ", test[i]["text"])
         #     print ("gold: ", answers[i])
         #     print ("pred: ", predictions[i])
+        #     print(syn)
         #     print ('\n')
     print (EM)
     print(true_check)
