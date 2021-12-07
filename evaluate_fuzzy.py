@@ -3,6 +3,7 @@ import re
 import numpy as np
 import json
 from rapidfuzz import process, fuzz
+import unicodedata
 
 def get_exact_match(answers1, answers2):
     if type(answers1)==list:
@@ -40,8 +41,11 @@ def normalize_answer(s):
 
     def lower(text):
         return text.lower()
+    
+    def unicode_to_ascii(text):
+        return unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode()
 
-    return white_space_fix(remove_articles(remove_punc(lower(remove_symbols(s)))))
+    return unicode_to_ascii(white_space_fix(remove_articles(remove_punc(lower(remove_symbols(s))))))
 
 
 def get_f1(answers, predictions, is_equal=get_exact_match, return_p_and_r=False):
