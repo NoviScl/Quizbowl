@@ -22,6 +22,7 @@ def get_exact_match(answers1, answers2):
         # very close to correct answers but this is the best possible result I could test on this dataset.
     return choice[1] >63.3 if type(choice)==tuple else choice >63.3
     
+    
 
 
 def normalize_answer(s):
@@ -90,7 +91,7 @@ if __name__ == "__main__":
         answers.append(ans)
         # print(answers)
     
-    with open('predictions.json', 'r') as f:
+    with open('model_predictions/predictions.json', 'r') as f:
         predictions = json.load(f)
     
     EM = []
