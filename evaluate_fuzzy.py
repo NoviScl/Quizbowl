@@ -14,6 +14,7 @@ def get_exact_match(answers1, answers2):
             return 0
         # return np.max([get_exact_match(a, answers2) for a in answers1])
         # instead of np max we still fuzzy match between list and get the best possible result back from list.
+
         choice =  process.extractOne(normalize_answer(answers2), answer1, scorer=fuzz.ratio)
     elif type(answers2)==list:
         if len(answers2)==0:
@@ -112,8 +113,7 @@ if __name__ == "__main__":
         if em == 0:
             syn = get_synonyms(normalize_answer(predictions[i]))
             emm = False
-            for word in syn:
-                emm = emm or get_exact_match(answers[i], word)
+            emm = emm or get_exact_match(answers[i], syn)
             if(emm):
                 true_check += 1
                 
