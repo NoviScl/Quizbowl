@@ -84,7 +84,7 @@ def get_synonyms(word):
     return set(synonyms)
 
 if __name__ == "__main__":
-    with open("predictions/HotpotQA_test_GPT_preds.json", 'r') as f:
+    with open("predictions/NQ_test_GPT_preds.json", 'r') as f:
         test = json.load(f)
     answers = []
     predictions = []
@@ -111,8 +111,10 @@ if __name__ == "__main__":
         if(em):
             true_check += 1
         
-        counter +=1
+        
+        check_syn = 0
         if em == 0:
+            check_syn = 1
             syn = get_synonyms(normalize_answer(predictions[i]))
             emm = False
             for word in syn:
@@ -122,14 +124,15 @@ if __name__ == "__main__":
                 em = 1
                 
         EM.append(str(counter)+'/'+str(em))
-        
+        counter +=1
               
         print(i)
         print('TRUE' if em else 'FALSE')
         print ("question: ", test[i]["question"])
         print ("gold: ", answers[i])
         print ("pred: ", predictions[i])
-        print(syn)
+        if check_syn:
+            print(syn)
         print ('\n')
     print (EM)
     print(true_check)

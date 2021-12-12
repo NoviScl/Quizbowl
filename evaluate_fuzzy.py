@@ -109,7 +109,9 @@ if __name__ == "__main__":
         if(em):
             true_check += 1
         
+        check_syn = 0
         if em == 0:
+            check_syn = 1
             syn = get_synonyms(normalize_answer(predictions[i]))
             emm = False
             emm = emm or get_exact_match(answers[i], syn)
@@ -118,11 +120,16 @@ if __name__ == "__main__":
                 em = 1
         EM.append(str(counter)+'/'+str(em))
         counter +=1
-        #     print ("question: ", test[i]["text"])
-        #     print ("gold: ", answers[i])
-        #     print ("pred: ", predictions[i])
+    
+        # print(i)
+        # print('TRUE' if em else 'FALSE')
+        # print ("question: ", test[i]["question"])
+        # print ("gold: ", answers[i])
+        # print ("pred: ", predictions[i])
+        # if check_syn:
         #     print(syn)
-        #     print ('\n')
+        # print ('\n')
+        
     print (EM)
     print(true_check)
 
