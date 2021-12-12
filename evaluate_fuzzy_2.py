@@ -84,7 +84,7 @@ def get_synonyms(word):
     return set(synonyms)
 
 if __name__ == "__main__":
-    with open("BeerQA_test_GPT_preds.json", 'r') as f:
+    with open("predictions/BeerQA_test_GPT_preds.json", 'r') as f:
         test = json.load(f)
     answers = []
     predictions = []
