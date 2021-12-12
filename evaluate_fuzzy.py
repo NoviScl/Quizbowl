@@ -108,15 +108,16 @@ if __name__ == "__main__":
         em = get_exact_match(answers[i], predictions[i])
         if(em):
             true_check += 1
-        EM.append(str(counter)+'/'+str(em))
-        counter +=1
+        
         if em == 0:
             syn = get_synonyms(normalize_answer(predictions[i]))
             emm = False
             emm = emm or get_exact_match(answers[i], syn)
             if(emm):
                 true_check += 1
-                
+                em = 1
+        EM.append(str(counter)+'/'+str(em))
+        counter +=1
         #     print ("question: ", test[i]["text"])
         #     print ("gold: ", answers[i])
         #     print ("pred: ", predictions[i])
