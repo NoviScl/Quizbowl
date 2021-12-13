@@ -14,11 +14,11 @@ def get_exact_match(answers1, answers2):
             return 0
         # return np.max([get_exact_match(a, answers2) for a in answers1])
         # instead of np max we still fuzzy match between list and get the best possible result back from list.
-        choice =  process.extractOne(normalize_answer(answers2), answer1, scorer=fuzz.ratio)
+        choice =  process.extractOne(normalize_answer(answers2), answers1, scorer=fuzz.ratio)
     elif type(answers2)==list:
         if len(answers2)==0:
             return 0
-        choice =  process.extractOne(normalize_answer(answers1), answer2, scorer=fuzz.ratio)
+        choice =  process.extractOne(normalize_answer(answers1), answers2, scorer=fuzz.ratio)
     else:
         choice = fuzz.ratio(normalize_answer(answers1), normalize_answer(answers2))
         # the threshold is 63.3. Here we do miss 1-2 predictions 
@@ -84,18 +84,20 @@ def get_synonyms(word):
     return set(synonyms)
 
 if __name__ == "__main__":
-    with open("predictions/NQ_test_GPT_preds.json", 'r') as f:
+    with open("predictions/TriviaQA_test_GPT_preds.json", 'r') as f:
         test = json.load(f)
     answers = []
     predictions = []
     for eg in test:
-        ans = eg["gold_answer"][0].strip()
+        ans = eg["gold_answer"]
         pred = eg["prediction"]
         # also tested a bunch of methods to increase accuracy, and found this one change.
         # We sub out what is in between two parnethesis, instead of removing everything after 
         # parenthesis thus making the match score quite bad for a few results. 
-        ans = re.sub("[\(\[].*?[\)\]]", "", ans)
-        pred = re.sub("[\(\[].*?[\)\]]", "", pred)
+        if(type(ans) != list):
+            ans = re.sub("[\(\[].*?[\)\]]", "", ans)
+            pred = re.sub("[\(\[].*?[\)\]]", "", pred)
+        
         # ans = ans.split('(')[0].strip()
         answers.append(ans)
         predictions.append(pred)
@@ -121,7 +123,7 @@ if __name__ == "__main__":
                 emm = emm or get_exact_match(answers[i], word)
             if(emm):
                 true_check += 1
-                em = 1
+                em = True
                 
         EM.append(str(counter)+'/'+str(em))
         counter +=1
