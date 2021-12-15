@@ -59,6 +59,7 @@ def evaluate(model_name):
             input_ids = tokenizer.encode(input_string, return_tensors="pt")
             output = model.generate(input_ids, max_length=200)
             pred = tokenizer.batch_decode(output, skip_special_tokens=True)
+            print(f"question={batch['question'][idx]}")
             print(f"prediction={pred}")
             print(f"label={batch['answer'][idx]}")
 
