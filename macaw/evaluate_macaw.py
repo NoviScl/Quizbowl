@@ -1,30 +1,48 @@
-import numpy as np
-import torch
 from argparse import ArgumentParser
 
+import torch
 from datasets import (
-    load_dataset,
-    load_metric
+    load_dataset
 )
-
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
     Seq2SeqTrainingArguments,
     Seq2SeqTrainer,
-    Trainer
 )
 
 
 def evaluate(model_name):
     torch.cuda.empty_cache()
-    raw_datasets = load_dataset("qanta", 'mode=full,char_skip=25')
+    raw_datasets = load_dataset('csv',
+                                data_files={'train': [args.train_input], 'validation': [args.validation_input]},
+                                delimiter='\t',
+                                column_names=['question', 'answer'],
+                                skiprows=1)
+
+    train_dataset = raw_datasets['train']
+    eval_dataset = raw_datasets['validation']
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-    def process_data_to_model_inputs(batch):
-        inputs = tokenizer(batch["text"], padding="max_length", truncation=True, max_length=1000)
-        outputs = tokenizer(batch["page"], padding="max_length", truncation=True, max_length=30)
+    # Preprocess the batches
+    def preprocess_qanta_dataset(batch):
+        input_strings = []
+        output_strings = []
+
+        for idx in range(len(batch['question'])):
+            if not batch["answer"][idx]:
+                batch["answer"][idx] = ""
+
+            macaw_input = "$answer$ ; $question$ = " + batch["question"][idx]
+            macaw_output = "$answer$ = " + batch["answer"][idx]
+
+            input_strings.append(macaw_input)
+            output_strings.append(macaw_output)
+
+        inputs = tokenizer(input_strings, padding="max_length", truncation=True, max_length=256)
+        outputs = tokenizer(output_strings, padding="max_length", truncation=True, max_length=30)
 
         batch["input_ids"] = inputs.input_ids
         batch["attention_mask"] = inputs.attention_mask
@@ -34,60 +52,71 @@ def evaluate(model_name):
 
         return batch
 
-    columns_to_remove = ["text", "page", "answer", "first_sentence",
-                         "full_question", "proto_id",
-                         "raw_answer", "difficulty", "sentence_idx",
-                         "subcategory", "dataset", "id", "gameplay",
-                         "year", "qdb_id", "char_idx", "tournament",
-                         "category", "tokenizations", "qanta_id"]
+    # Print out predictions for a given batch from eval dataset
+    def predict(batch):
+        for idx in range(len(batch['question'])):
+            input_string = "$answer$; $question$ = " + batch["question"][idx]
+            input_ids = tokenizer.encode(input_string, return_tensors="pt")
+            output = model.generate(input_ids, max_length=200)
+            pred = tokenizer.batch_decode(output, skip_special_tokens=True)
+            print(f"question={batch['question'][idx]}")
+            print(f"prediction={pred}")
+            print(f"label={batch['answer'][idx]}")
 
-    # tokenized_datasets = raw_datasets
-    small_train_dataset = raw_datasets["guesstrain"].map(
-        process_data_to_model_inputs,
-        remove_columns=columns_to_remove,
-        batched=True).shuffle(seed=42).select(range(10))
-    small_eval_dataset = raw_datasets["guessdev"].map(
-        process_data_to_model_inputs,
-        remove_columns=columns_to_remove,
-        batched=True).shuffle(seed=42).select(range(10))
+        return batch
 
-    training_args = Seq2SeqTrainingArguments("test_trainer",
-                                             save_strategy="epoch",
-                                             no_cuda=True,
-                                             resume_from_checkpoint=True)
+
+
+    columns_to_remove = ["question", "answer"]
+    small_train_dataset = train_dataset.select(range(32)).map(
+        preprocess_qanta_dataset,
+        batched=True,
+        batch_size=4,
+        remove_columns=columns_to_remove
+    ).shuffle(seed=42)
+
+    small_eval_dataset = eval_dataset.select(range(32)).map(
+        preprocess_qanta_dataset,
+        batched=True,
+        batch_size=4,
+        remove_columns=columns_to_remove
+    ).shuffle(seed=42)
+
+    training_args = Seq2SeqTrainingArguments(
+        "test_trainer",
+        save_strategy="epoch",
+        no_cuda=True,
+        resume_from_checkpoint=True
+    )
+
     if args.do_train:
-        trainer = Seq2SeqTrainer(
-            model=model, args=training_args, train_dataset=small_train_dataset, eval_dataset=small_eval_dataset,
-
-        )
-        trainer.train()
-
-        model.save_pretrained('./test/finetuned_macaw')
-        tokenizer.save_pretrained('./test/finetuned_macaw')
-
-    if args.do_evaluate:
-        metric = load_metric("accuracy")
-
-        def compute_metrics(eval_pred):
-            logits, labels = eval_pred
-            predictions = logits[0].argmax(axis=2)
-            score = metric.compute(predictions=predictions.flatten(), references=labels.flatten())
-            print(f"accuracy={score}")
-            return score
-
         trainer = Seq2SeqTrainer(
             model=model,
             args=training_args,
             train_dataset=small_train_dataset,
             eval_dataset=small_eval_dataset,
-            compute_metrics=compute_metrics,
         )
-        trainer.evaluate()
+
+        trainer.train()
+
+        model.save_pretrained(args.save_model_path)
+        tokenizer.save_pretrained(args.save_model_path)
+
+    if args.do_evaluate:
+        eval_dataset.select(range(32)).map(
+            predict,
+            batched=True,
+            batch_size=4,
+        )
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--model_name', type=str, default="allenai/macaw-large", help="allenai macaw model to use")
+    parser.add_argument('--save_model_path', type=str, default="./test/finetuned_macaw",
+                        help="Place to save the finetuned model")
+    parser.add_argument('--train_input', type=str, help="Training input TSV file")
+    parser.add_argument('--validation_input', type=str, help="Validation input TSV file")
     parser.add_argument('--do_train', action='store_true', default=False)
     parser.add_argument('--do_evaluate', action='store_true', default=False)
     args = parser.parse_args()
