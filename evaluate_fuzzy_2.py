@@ -84,12 +84,13 @@ def get_synonyms(word):
     return set(synonyms)
 
 if __name__ == "__main__":
-    with open("predictions/TriviaQA_test_GPT_preds.json", 'r') as f:
+    with open("t5_trivia_qanta/models_large_validation_eval_triviaqa_predictions_out.json", 'r') as f:
         test = json.load(f)
     answers = []
     predictions = []
-    for eg in test:
-        ans = eg["gold_answer"]
+    for eg in test['questions']:
+        # ans = eg["gold_answer"][0].strip()
+        ans = eg["label"]
         pred = eg["prediction"]
         # also tested a bunch of methods to increase accuracy, and found this one change.
         # We sub out what is in between two parnethesis, instead of removing everything after 
@@ -130,7 +131,7 @@ if __name__ == "__main__":
               
         print(i)
         print('TRUE' if em else 'FALSE')
-        print ("question: ", test[i]["question"])
+        # print ("question: ", test[i]["question"])
         print ("gold: ", answers[i])
         print ("pred: ", predictions[i])
         if check_syn:

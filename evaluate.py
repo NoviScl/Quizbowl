@@ -62,16 +62,24 @@ def get_f1(answers, predictions, is_equal=get_exact_match, return_p_and_r=False)
 
 
 if __name__ == "__main__":
-    with open("test_100.json", 'r') as f:
+    with open("predictions/TriviaQA_test_PromptRetrieve_preds.json", 'r') as f:
         test = json.load(f)
     answers = []
+    predictions = []
     for eg in test:
-        ans = eg["answer"].split('[')[0].strip()
-        ans = ans.split('(')[0].strip()
+        ans = eg["gold_answer"][0].strip()
+        # ans = eg["label"]
+        pred = eg["prediction"]
+        # also tested a bunch of methods to increase accuracy, and found this one change.
+        # We sub out what is in between two parnethesis, instead of removing everything after 
+        # parenthesis thus making the match score quite bad for a few results. 
+        if(type(ans) != list):
+            ans = re.sub("[\(\[].*?[\)\]]", "", ans)
+            pred = re.sub("[\(\[].*?[\)\]]", "", pred)
+        
+        # ans = ans.split('(')[0].strip()
         answers.append(ans)
-    
-    with open('predictions_last_sent.json', 'r') as f:
-        predictions = json.load(f)
+        predictions.append(pred)
     
     EM = 0
     for i in range(len(answers)):
